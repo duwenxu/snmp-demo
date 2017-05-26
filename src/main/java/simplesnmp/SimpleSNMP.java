@@ -56,6 +56,9 @@ public class SimpleSNMP {
     }
 
     public static Snmp getSnmp() {
+        if( null == snmp ){
+            throw new NoInitException("没有init snmp 对象");
+        }
         return snmp;
     }
 
