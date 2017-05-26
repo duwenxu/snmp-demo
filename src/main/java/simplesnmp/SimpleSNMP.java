@@ -22,12 +22,12 @@ public class SimpleSNMP {
 
 
     /**
-     * Create simplesnmp. listen poort 162
+     * Create simplesnmp. listen port 1162 允许端口重入
      *
      * @throws IOException the io exception
      */
     public static void init() throws IOException {
-        init(162,false);
+        init(1162,true);
     }
 
 
@@ -41,6 +41,9 @@ public class SimpleSNMP {
      * @throws IOException the io exception
      */
     public static void init(int listenPort, boolean reuseAddress) throws IOException {
+        if( null != snmp ){
+            throw new DoubleInitException("重复初始化 snmp");
+        }
         //设定采取的协议为 udp
         UdpAddress udpAddress = new UdpAddress(listenPort);
         TransportMapping transport = new DefaultUdpTransportMapping(udpAddress,reuseAddress);
