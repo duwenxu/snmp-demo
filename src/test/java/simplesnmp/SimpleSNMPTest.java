@@ -66,6 +66,8 @@ public class SimpleSNMPTest {
 
 
         PDU simlePDU = SimpleSNMPUtil.createSimlePDU("1.3.6.1.4.1.2011.10.2.75.2.1.1");
+
+        //发起请求
         ResponseEvent responseEvent = SimpleSNMP.getInstance().getSnmp().getNext(simlePDU, communityTarget);
 
         printResponse(responseEvent);
