@@ -1,65 +1,177 @@
 package simplesnmp;
 
+import org.apache.log4j.Logger;
+import org.snmp4j.CommunityTarget;
+import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
 import org.snmp4j.TransportMapping;
-import org.snmp4j.smi.UdpAddress;
+import org.snmp4j.event.ResponseEvent;
+import org.snmp4j.smi.*;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by yhy on 17-5-24.
- *
- * 简单的 SimpleSNMP 主要是为了全局初始化一个 snmp 对象监听 162 端口接收请求，且不可重用端口。
- *
+ * <p>
+ * 简单的 SimpleSNMP。
  */
 public class SimpleSNMP {
-    /**
-     * 真正做 snmp 客户端的类
-     */
-    static private Snmp snmp = null;
 
 
+    private static final Logger LOGGER = Logger.getLogger(SimpleSNMP.class);
 
     /**
-     * Create simplesnmp. listen port 1162 允许端口重入
+     * 简单的使用 udp 的随机端口发送 snmp get 请求
      *
-     * @throws IOException the io exception
+     * @param ip
+     * @param community
+     * @param oid
+     * @return
+     * @throws IOException
      */
-    public static void init() throws IOException {
-        init(1162,true);
+    public ResponseEvent get(String ip, String community, String oid) throws IOException {
+        String address = String.format("udp:%s/161", ip);
+        CommunityTarget communityTarget = SimpleSNMPUtil.createSimpleTarget(
+                GenericAddress.parse(address),
+                community);
+
+
+        PDU simlePDU = SimpleSNMPUtil.createSimlePDU(oid);
+
+        Snmp snmp = initSnmp();
+        return snmp.get(simlePDU, communityTarget);
+    }
+
+    /**
+     * snmp getnext 获取数据
+     *
+     * @param ip
+     * @param community
+     * @param oid
+     * @return
+     * @throws IOException
+     */
+    public ResponseEvent getNext(String ip, String community, String oid) throws IOException {
+        String address = String.format("udp:%s/161", ip);
+        CommunityTarget communityTarget = SimpleSNMPUtil.createSimpleTarget(
+                GenericAddress.parse(address),
+                community);
+
+
+        PDU simlePDU = SimpleSNMPUtil.createSimlePDU(oid);
+
+        Snmp snmp = initSnmp();
+        return snmp.getNext(simlePDU, communityTarget);
+    }
+
+    /**
+     * 通过 walk 的方式来获取数据
+     *
+     * @param ip
+     * @param community
+     * @param oid
+     * @return
+     * @throws IOException
+     */
+    public List<ResponseEvent> walk(String ip, String community, String oid) throws IOException {
+        String address = String.format("udp:%s/161", ip);
+        CommunityTarget communityTarget = SimpleSNMPUtil.createSimpleTarget(
+                GenericAddress.parse(address),
+                community);
+
+        boolean finished = false;   //是否已经完成了walk
+        List<ResponseEvent> responseEvents = new ArrayList<>(); //结果集
+
+        Snmp snmp = initSnmp();
+
+        //要 getnext 的目录。
+        VariableBinding vb = new VariableBinding(new OID(oid));
+        PDU pdu = new PDU();
+
+        //========== 循环去 getNext ==============
+        do {
+            //添加要 getNext 的目录。
+            pdu.clear();
+            pdu.add(vb);
+
+            ResponseEvent responseEvent = snmp.getNext(pdu, communityTarget);
+            PDU responsePDU = responseEvent.getResponse();
+
+            //
+            if (null == responsePDU) {
+                break;
+            } else {
+                vb = responsePDU.get(0);
+            }
+            //-----------查看是否采集完毕----------
+            finished = checkWalkFinished(new OID(oid), pdu, vb);
+            //最后一个非此根下的节点要抛弃
+            if( !finished ){
+                responseEvents.add(responseEvent);
+            }
+        } while (!finished);
+
+        return responseEvents;
     }
 
 
-    /**
-     * init snmp
-     *
-     * @param listenPort   the listen port
-     * @param reuseAddress
-     *      if <code>true</code> addresses are reused which provides faster socket
-     *      binding if an application is restarted for instance.
-     * @throws IOException the io exception
-     */
-    public static void init(int listenPort, boolean reuseAddress) throws IOException {
-        if( null != snmp ){
-            throw new DoubleInitException("重复初始化 snmp");
-        }
+    private Snmp initSnmp() throws IOException {
         //设定采取的协议为 udp
-        UdpAddress udpAddress = new UdpAddress(listenPort);
-        TransportMapping transport = new DefaultUdpTransportMapping(udpAddress,reuseAddress);
+        TransportMapping transport = new DefaultUdpTransportMapping();
         if( null == transport ){
-            throw new RuntimeException("初始化 DefaultUdpTransportMapping 失败");
+            throw new RuntimeException("DefaultUdpTransportMapping 初始化失败");
         }
+        Snmp snmp = new Snmp(transport);
         //调用TransportMapping中的listen()方法，启动监听进程，接收消息
         transport.listen();
-        snmp = new Snmp(transport);
-    }
-
-    public static Snmp getSnmp() {
-        if( null == snmp ){
-            throw new NoInitException("没有init snmp 对象");
-        }
         return snmp;
     }
 
+    /**
+     * 1)responsePDU == null<br>
+     * 2)responsePDU.getErrorStatus() != 0<br>
+     * 3)responsePDU.get(0).getOid() == null<br>
+     * 4)responsePDU.get(0).getOid().size() < targetOID.size()<br>
+     * 5)targetOID.leftMostCompare(targetOID.size(),responsePDU.get(0).getOid())
+     * !=0<br>
+     * 6)Null.isExceptionSyntax(responsePDU.get(0).getVariable().getSyntax())<br>
+     * 7)responsePDU.get(0).getOid().compareTo(targetOID) <= 0<br>
+     *
+     * @param targetOID
+     * @param pdu
+     * @param vb
+     * @return 是否完成
+     */
+    private static boolean checkWalkFinished(OID targetOID, PDU pdu,
+                                             VariableBinding vb) {
+        boolean finished = false;
+        if (pdu.getErrorStatus() != 0) {
+            System.out.println("[true] responsePDU.getErrorStatus() != 0 ");
+            System.out.println(pdu.getErrorStatusText());
+            finished = true;
+        } else if (vb.getOid() == null) {
+            System.out.println("[true] vb.getOid() == null");
+            finished = true;
+        } else if (vb.getOid().size() < targetOID.size()) {
+            System.out.println("[true] vb.getOid().size() < targetOID.size()");
+            finished = true;
+        } else if (targetOID.leftMostCompare(targetOID.size(), vb.getOid()) != 0) {
+            System.out.println("[true] targetOID.leftMostCompare() != 0");
+            finished = true;
+        } else if (Null.isExceptionSyntax(vb.getVariable().getSyntax())) {
+            System.out
+                    .println("[true] Null.isExceptionSyntax(vb.getVariable().getSyntax())");
+            finished = true;
+        } else if (vb.getOid().compareTo(targetOID) <= 0) {
+            System.out.println("[true] Variable received is not "
+                    + "lexicographic successor of requested " + "one:");
+            System.out.println(vb.toString() + " <= " + targetOID);
+            finished = true;
+        }
+        return finished;
+
+    }
 }
