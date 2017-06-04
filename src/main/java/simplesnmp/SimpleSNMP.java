@@ -1,12 +1,16 @@
 package simplesnmp;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
 import org.snmp4j.TransportMapping;
 import org.snmp4j.event.ResponseEvent;
-import org.snmp4j.smi.*;
+import org.snmp4j.smi.GenericAddress;
+import org.snmp4j.smi.Null;
+import org.snmp4j.smi.OID;
+import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 import java.io.IOException;
@@ -21,8 +25,7 @@ import java.util.List;
 public class SimpleSNMP {
 
 
-    private static final Logger LOGGER = Logger.getLogger(SimpleSNMP.class);
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleSNMP.class);
     /**
      * 简单的使用 udp 的随机端口发送 snmp get 请求
      *
@@ -141,35 +144,35 @@ public class SimpleSNMP {
      * 7)responsePDU.get(0).getOid().compareTo(targetOID) <= 0<br>
      *
      * @param targetOID
-     * @param pdu
+     * @param responsePDU
      * @param vb
      * @return 是否完成
      */
-    private static boolean checkWalkFinished(OID targetOID, PDU pdu,
+    private static boolean checkWalkFinished(OID targetOID, PDU responsePDU,
                                              VariableBinding vb) {
+        String logPrefix = "walk fished!!!!, Because:";
         boolean finished = false;
-        if (pdu.getErrorStatus() != 0) {
-            System.out.println("[true] responsePDU.getErrorStatus() != 0 ");
-            System.out.println(pdu.getErrorStatusText());
+        if (responsePDU.getErrorStatus() != 0) {
             finished = true;
+            LOGGER.debug(logPrefix + "responsePDU.getErrorStatus() != 0");
         } else if (vb.getOid() == null) {
-            System.out.println("[true] vb.getOid() == null");
             finished = true;
+            LOGGER.debug(logPrefix + "vb.getOid() == null");
         } else if (vb.getOid().size() < targetOID.size()) {
-            System.out.println("[true] vb.getOid().size() < targetOID.size()");
             finished = true;
+            LOGGER.debug(logPrefix + "vb.getOid().size() < targetOID.size()");
         } else if (targetOID.leftMostCompare(targetOID.size(), vb.getOid()) != 0) {
-            System.out.println("[true] targetOID.leftMostCompare() != 0");
             finished = true;
+            LOGGER.debug(logPrefix + "targetOID.leftMostCompare() != 0" );
         } else if (Null.isExceptionSyntax(vb.getVariable().getSyntax())) {
-            System.out
-                    .println("[true] Null.isExceptionSyntax(vb.getVariable().getSyntax())");
             finished = true;
+            LOGGER.debug(logPrefix + "Null.isExceptionSyntax(vb.getVariable().getSyntax())");
         } else if (vb.getOid().compareTo(targetOID) <= 0) {
             System.out.println("[true] Variable received is not "
                     + "lexicographic successor of requested " + "one:");
             System.out.println(vb.toString() + " <= " + targetOID);
             finished = true;
+            LOGGER.debug("{} {}<={}",logPrefix,vb.getOid().toString(),targetOID.toString());
         }
         return finished;
 
