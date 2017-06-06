@@ -38,6 +38,10 @@ public class SimpleSNMPTest {
         String oid = ".1.3.6.1.4.1.2011.10.2.6.1.1.1.1.6.97";
         String responseSring = simpleSNMP.get(ip, "public", oid);
 
+        printGetResult(oid, responseSring);
+    }
+
+    private void printGetResult(String oid, String responseSring) {
         System.out.println(String.format("get获取 oid=%s,value=%s", oid, responseSring));
     }
 
@@ -60,14 +64,18 @@ public class SimpleSNMPTest {
         List<String> responseList = simpleSNMP.walk(ip, "public", oid);
 
 
-        System.out.println(String.format("walk获取oid=%s", oid));
-        for ( String responseSring:responseList){
-            System.out.println(String.format("value=%s", responseSring));
-        }
+        printWalkResult(oid, responseList);
 
 //        for (ResponseEvent responseEvent : responseEvents) {
 //            printResponse(responseEvent);
 //        }
+    }
+
+    private void printWalkResult(String oid, List<String> responseList) {
+        System.out.println(String.format("walk获取oid=%s", oid));
+        for ( String responseSring:responseList){
+            System.out.println(String.format("value=%s", responseSring));
+        }
     }
 
     /**
