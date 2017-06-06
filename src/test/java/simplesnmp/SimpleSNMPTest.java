@@ -32,11 +32,13 @@ public class SimpleSNMPTest {
     @Test
     public void testGet() throws Exception {
         SimpleSNMP simpleSNMP = new SimpleSNMP();
-        ResponseEvent responseEvent = simpleSNMP.get("61.175.164.174",
-                "public",
-                ".1.3.6.1.4.1.2011.10.2.6.1.1.1.1.6.97");
 
-        printResponse(responseEvent);
+
+        String ip = "61.175.164.174";
+        String oid = ".1.3.6.1.4.1.2011.10.2.6.1.1.1.1.6.97";
+        String responseSring = simpleSNMP.get(ip, "public", oid);
+
+        System.out.println(String.format("get获取 oid=%s,value=%s", oid, responseSring));
     }
 
     /**
@@ -53,13 +55,19 @@ public class SimpleSNMPTest {
     @Test
     public void testWalkForIpCommunityOid() throws Exception {
         SimpleSNMP simpleSNMP = new SimpleSNMP();
-        List<ResponseEvent> responseEvents = simpleSNMP.walk("61.175.164.174",
-                                                             "public",
-                                                             "1.3.6.1.4.1.2011.10.2.75.4.2.2.1.2");
+        String ip = "61.175.164.174";
+        String oid = "1.3.6.1.4.1.2011.10.2.75.4.2.2.1.2";
+        List<String> responseList = simpleSNMP.walk(ip, "public", oid);
 
-        for (ResponseEvent responseEvent : responseEvents) {
-            printResponse(responseEvent);
+
+        System.out.println(String.format("walk获取oid=%s", oid));
+        for ( String responseSring:responseList){
+            System.out.println(String.format("value=%s", responseSring));
         }
+
+//        for (ResponseEvent responseEvent : responseEvents) {
+//            printResponse(responseEvent);
+//        }
     }
 
     /**

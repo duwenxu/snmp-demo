@@ -35,7 +35,7 @@ public class SimpleSNMP {
      * @return
      * @throws IOException
      */
-    public ResponseEvent get(String ip, String community, String oid) throws IOException {
+    public String get(String ip, String community, String oid) throws IOException {
         String address = String.format("udp:%s/161", ip);
         CommunityTarget communityTarget = SimpleSNMPUtil.createSimpleTarget(
                 GenericAddress.parse(address),
@@ -45,7 +45,12 @@ public class SimpleSNMP {
         PDU simlePDU = SimpleSNMPUtil.createSimlePDU(oid);
 
         Snmp snmp = initSnmp();
-        return snmp.get(simlePDU, communityTarget);
+        ResponseEvent responseEvent = snmp.get(simlePDU, communityTarget);
+        if( null == responseEvent ){
+            throw new RuntimeException("responseEvent is null");
+        }
+
+        return responseEvent.getResponse().get(0).toValueString();
     }
 
     /**
@@ -57,7 +62,7 @@ public class SimpleSNMP {
      * @return
      * @throws IOException
      */
-    public ResponseEvent getNext(String ip, String community, String oid) throws IOException {
+    public String getNext(String ip, String community, String oid) throws IOException {
         String address = String.format("udp:%s/161", ip);
         CommunityTarget communityTarget = SimpleSNMPUtil.createSimpleTarget(
                 GenericAddress.parse(address),
@@ -67,7 +72,12 @@ public class SimpleSNMP {
         PDU simlePDU = SimpleSNMPUtil.createSimlePDU(oid);
 
         Snmp snmp = initSnmp();
-        return snmp.getNext(simlePDU, communityTarget);
+        ResponseEvent responseEvent = snmp.getNext(simlePDU, communityTarget);
+        if( null == responseEvent ){
+            throw new RuntimeException("responseEvent is null");
+        }
+
+        return responseEvent.getResponse().get(0).toValueString();
     }
 
     /**
@@ -79,14 +89,14 @@ public class SimpleSNMP {
      * @return
      * @throws IOException
      */
-    public List<ResponseEvent> walk(String ip, String community, String oid) throws IOException {
+    public List<String> walk(String ip, String community, String oid) throws IOException {
         String address = String.format("udp:%s/161", ip);
         CommunityTarget communityTarget = SimpleSNMPUtil.createSimpleTarget(
                 GenericAddress.parse(address),
                 community);
 
         boolean finished = false;   //是否已经完成了walk
-        List<ResponseEvent> responseEvents = new ArrayList<>(); //结果集
+        List<String> responseString = new ArrayList<>(); //结果集
 
         Snmp snmp = initSnmp();
 
@@ -111,13 +121,13 @@ public class SimpleSNMP {
             }
             //-----------查看是否采集完毕----------
             finished = checkWalkFinished(new OID(oid), pdu, vb);
-            //最后一个非此根下的节点要抛弃
+            //---------最后一个非此根下的节点要抛弃---
             if( !finished ){
-                responseEvents.add(responseEvent);
+                responseString.add(vb.toValueString());
             }
         } while (!finished);
 
-        return responseEvents;
+        return responseString;
     }
 
 
