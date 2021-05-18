@@ -34,7 +34,7 @@ public class SimpleSNMPTest {
         SimpleSNMP simpleSNMP = new SimpleSNMP();
 
 
-        String ip = "61.175.164.174";
+        String ip = "127.0.0.1";
         String oid = ".1.3.6.1.4.1.2011.10.2.6.1.1.1.1.6.97";
         String responseSring = simpleSNMP.get(ip, "public", oid);
 
@@ -73,7 +73,7 @@ public class SimpleSNMPTest {
 
     private void printWalkResult(String oid, List<String> responseList) {
         System.out.println(String.format("walk获取oid=%s", oid));
-        for ( String responseSring:responseList){
+        for (String responseSring : responseList) {
             System.out.println(String.format("value=%s", responseSring));
         }
     }
@@ -90,11 +90,10 @@ public class SimpleSNMPTest {
         System.out.println("----------解析Response-------------");
 
         if (null != responseEvent && null != responseEvent.getResponse()) {
-            Vector<? extends VariableBinding> variableBindings = responseEvent.getResponse().getVariableBindings();
-            for (int i = 0; i < variableBindings.size(); i++) {
-                VariableBinding recVB = variableBindings.elementAt(i);
-                System.out
-                        .println(recVB.getOid() + " : " + recVB.getVariable().toString());
+            List<? extends VariableBinding> bindings = responseEvent.getResponse().getVariableBindings();
+            for (int i = 0; i < bindings.size(); i++) {
+                VariableBinding recVB = bindings.get(i);
+                System.out.println(recVB.getOid() + " : " + recVB.getVariable().toString());
             }
         }
     }

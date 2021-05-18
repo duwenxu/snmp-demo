@@ -96,7 +96,7 @@ public class SimpleSNMP {
                 community);
 
         boolean finished = false;   //是否已经完成了walk
-        List<String> responseString = new ArrayList<>(); //结果集
+        List<String> responseString = new ArrayList<String>(); //结果集
 
         Snmp snmp = initSnmp();
 
