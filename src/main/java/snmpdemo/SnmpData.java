@@ -55,8 +55,6 @@ public class SnmpData {
         Snmp snmp = null;
         try {
             PDU pdu = new PDU();
-            // pdu.add(new VariableBinding(new OID(new int[]
-            // {1,3,6,1,2,1,1,2})));
             pdu.add(new VariableBinding(new OID(oid)));
 
             DefaultUdpTransportMapping transport = new DefaultUdpTransportMapping();

@@ -13,7 +13,7 @@ public class SnmpTest {
         // TODO Auto-generated method stub
         SnmpTest test = new SnmpTest();
 
-        test.testGet();
+        test.testGetList();
 
     }
 
@@ -31,6 +31,10 @@ public class SnmpTest {
         List<String> oidList = new ArrayList<String>();
         oidList.add("1.3.6.1.2.1.1.5.0");
         oidList.add("1.3.6.1.2.1.1.7.0");
+        oidList.add(".1.3.6.1.2.1.25.1.5.0");
+        oidList.add(".1.3.6.1.2.1.1.2.0");
+        oidList.add(".1.3.6.1.2.1.1.1.0");
+        oidList.add(".1.3.6.1.2.1.1.3.0");
         SnmpData.snmpGetList(ip, community, oidList);
     }
 
