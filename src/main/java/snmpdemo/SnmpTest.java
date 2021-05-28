@@ -20,7 +20,7 @@ public class SnmpTest {
     public void testGet() {
         String ip = "127.0.0.1";
         String community = "public";
-        String oidval1 = ".1.3.6.1.2.1.4.5.0";
+        String oidval1 = ".1.3.6.1.2.1.25.1.5.0";
         SnmpData.snmpGet(ip, community, oidval1);
     }
 
@@ -29,12 +29,11 @@ public class SnmpTest {
         String ip = "127.0.0.1";
         String community = "public";
         List<String> oidList = new ArrayList<String>();
-        oidList.add("1.3.6.1.2.1.1.5.0");
-        oidList.add("1.3.6.1.2.1.1.7.0");
-        oidList.add(".1.3.6.1.2.1.25.1.5.0");
+        oidList.add(".1.3.6.1.2.1.4.5.0");
+        oidList.add(".1.3.6.1.2.1.4.12.0");
         oidList.add(".1.3.6.1.2.1.1.2.0");
-        oidList.add(".1.3.6.1.2.1.1.1.0");
-        oidList.add(".1.3.6.1.2.1.1.3.0");
+        oidList.add(".1.3.6.1.2.1.1.7.0");
+        oidList.add(".1.3.6.1.2.1.7.4.0");
         SnmpData.snmpGetList(ip, community, oidList);
     }
 
@@ -43,8 +42,11 @@ public class SnmpTest {
         String ip = "127.0.0.1";
         String community = "public";
         List<String> oidList = new ArrayList<String>();
-        oidList.add("1.3.6.1.2.1");
-        oidList.add("1.3.6.1.2.12");
+        oidList.add("1.3.6.1.2.1.1.5.0");
+        oidList.add("1.3.6.1.2.1.1.7.0");
+        oidList.add(".1.3.6.1.2.1.25.1.5.0");
+        oidList.add(".1.3.6.1.2.1.1.3.0");
+        oidList.add(".1.3.6.1.2.1.25.3.3.1.2");
         SnmpData.snmpAsynGetList(ip, community, oidList);
         System.out.println("i am first!");
     }
